@@ -21,6 +21,7 @@ function generateRandomString() {
   return newId;
 }
 
+
 app.get('/urls', function(req, res) {
   const templateVars = { urls: urlDatabase};
   res.render('urls_index', templateVars);
@@ -30,10 +31,18 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL]
+  // console.log(urlDatabase[req.params.shortURL]);
+  res.redirect(`http://localhost:${PORT}/urls`)
+});
+
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
+
+
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL]
@@ -43,9 +52,10 @@ app.get("/u/:shortURL", (req, res) => {
 app.post("/urls", (req, res) => {
   const short = generateRandomString()
   urlDatabase[short] = req.body.longURL;
-  console.log(urlDatabase);
   res.redirect(`http://localhost:${PORT}/urls/${short}`);        // Respond with 'Ok' (we will replace this)
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
