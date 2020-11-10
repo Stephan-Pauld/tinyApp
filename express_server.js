@@ -38,7 +38,14 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
+  // console.log(req.params);
   res.redirect(`http://localhost:${PORT}/urls/${req.params.shortURL}`)
+});
+
+app.post("/urls/:shortURL/changeURL", (req, res) => {
+  // console.log(req.params.shortURL);
+  urlDatabase[req.params.shortURL] = req.body.longURL
+  res.redirect(`http://localhost:${PORT}/urls`)
 });
 
 app.post("/urls/:shortURL", (req, res) => {
@@ -49,11 +56,10 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
-
-
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL]
@@ -61,9 +67,11 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  
   const short = generateRandomString()
   urlDatabase[short] = req.body.longURL;
-  res.redirect(`http://localhost:${PORT}/urls/${short}`);        // Respond with 'Ok' (we will replace this)
+  console.log(req.body.longURL);
+  res.redirect(`http://localhost:${PORT}/urls/${short}`);
 });
 
 
