@@ -12,9 +12,14 @@ const urlDatabase = {
 };
 
 function generateRandomString() {
-
+  let newId = "";
+  const len = 6;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < len; i++) {
+    newId += letters[(Math.floor(Math.random() * letters.length))];
+  }
+  return newId;
 }
-
 
 app.get('/urls', function(req, res) {
   const templateVars = { urls: urlDatabase};
@@ -30,9 +35,16 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL]
+  res.redirect(longURL);
+});
+
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  let short = generateRandomString()
+  urlDatabase[short] = req.body.longURL
+  console.log(urlDatabase);
+  res.redirect(`http://localhost:${PORT}/urls/${short}`);        // Respond with 'Ok' (we will replace this)
 });
 
 app.listen(PORT, () => {
