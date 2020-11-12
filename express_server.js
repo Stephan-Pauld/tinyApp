@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser')
+const bcrypt = require('bcrypt');
 // const {generateRandomString, emailCheck, idCheck, passwordCheck, findUserURLS} = require('./helper')
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -62,10 +63,9 @@ const idCheck = (email) => {
 
 const passwordCheck = (password, email) => {
   for (const user in users) {
-    console.log(user);
+    // console.log(user);
     if (email === users[user].email) {
-      console.log(`The pass is: ${password}`);
-      if (users[user].password === password) {
+      if (bcrypt.compareSync(password, users[user].password)) {
         console.log(`we have found the password: ${users[user].password} for user: ${user}`);
         return true;
       }
@@ -219,8 +219,9 @@ app.post("/register", (req, res) => {
       {
         id: randId,
         email: req.body.email,
-        password: req.body.password
+        password: bcrypt.hashSync(req.body.password, 2)
       }
+      // console.log(bcrypt.compareSync(req.body.password, bcrypt.hashSync(req.body.password, 2)));
       console.log("Account Created", req.body.email, req.body.password);
       return res.redirect('/login')
     }
