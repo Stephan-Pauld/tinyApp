@@ -3,28 +3,33 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser')
+// const {generateRandomString, emailCheck, idCheck, passwordCheck, findUserURLS} = require('./helper')
 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 app.use(cookieParser());
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "123"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
 }
+
+// ############################################
+// ##FUNCTIONS LETS TOSS IN A HELPER FILE!!!!##
+// ############################################
 
 function generateRandomString() {
   let newId = "";
@@ -56,30 +61,36 @@ const idCheck = (email) => {
 };
 
 const passwordCheck = (password, email) => {
-  console.log(`In password check looking for password: ${password} email: ${email}`);
-  console.log('=-=-=-=-=-=-=-=-=-');
-  console.log(users);
-  console.log('=-=-=-=-=-=-=-=-=-');
   for (const user in users) {
     console.log(user);
-    console.log(users[user].password);
-    // console.log(users[user].email);
-  
     if (email === users[user].email) {
       console.log(`The pass is: ${password}`);
-      if (users[user].password === password){
+      if (users[user].password === password) {
         console.log(`we have found the password: ${users[user].password} for user: ${user}`);
         return true;
       }
-    } 
-    else {
-      return false;
     }
   }
+  return false;
 };
 
+const findUserURLS = (userID) => {
+  let result = {};
+
+  for (const shorURL in urlDatabase) {
+    if (urlDatabase[shorURL].userID === userID) {
+      result[shorURL] = urlDatabase[shorURL];
+    }
+  }
+  return result;
+};
+
+// ##################
+// ## GET REQUESTS ##
+// ##################
+
 app.get("/register", (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     urls: urlDatabase,
     username: req.cookies["user_id"],
     users: users
@@ -87,12 +98,14 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
-app.get('/urls', function(req, res) {
-  const templateVars = { 
-    urls: urlDatabase,
+app.get('/urls', function (req, res) {
+  const myUrl = findUserURLS(req.cookies['user_id'])
+  const templateVars = {
+    urls: myUrl,
     username: req.cookies["user_id"],
     users: users
   };
+  console.log(templateVars.username);
   res.render('urls_index', templateVars);
 });
 
@@ -101,43 +114,71 @@ app.get("/urls/new", (req, res) => {
     username: req.cookies["user_id"],
     users: users
   };
-  // console.log(req.cookies.UserName);
+  if (!req.cookies.user_id) {
+    console.log('I see NO COOKIESSS NOMNOMNOM');
+    return res.redirect("/login");
+  }
   res.render("urls_new", templateVars);
 });
 
-app.get('/login', function(req, res) {
-  const templateVars = { 
+app.get('/login', function (req, res) {
+  const templateVars = {
     urls: urlDatabase,
     username: req.cookies["user_id"],
     users: users
   };
+  console.log(users);
   res.render('login', templateVars);
 });
 
+app.get("/urls/:shortURL", (req, res) => {
+  console.log(req.params);
+  const templateVars = {
+    username: req.cookies["user_id"],
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL].longURL,
+    users: users
+  };
+  res.render("urls_show", templateVars);
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL].longURL
+  res.redirect(longURL);
+});
+
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL]
-  // console.log(urlDatabase[req.params.shortURL]);
+
+  if (req.cookies["user_id"] === urlDatabase[req.params.shortURL].userID) {
+    delete urlDatabase[req.params.shortURL]
+  }
   res.redirect(`http://localhost:${PORT}/urls`)
 });
 
+// ####################
+// ## POST REQUESTS  ##
+// ####################
+
+
 app.post("/urls/:shortURL/edit", (req, res) => {
-  // console.log(req.params);
+
   res.redirect(`http://localhost:${PORT}/urls/${req.params.shortURL}`)
 });
 
 app.post("/urls/:shortURL/changeURL", (req, res) => {
   // console.log(req.params.shortURL);
-  urlDatabase[req.params.shortURL] = req.body.longURL
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL
   res.redirect(`http://localhost:${PORT}/urls`)
 });
+
 
 app.post("/login", (req, res) => {
   const pass = req.body.password;
   const email = req.body.email;
 
   if (emailCheck(email)) {
-    console.log("Email Looks Good");
-    console.log(`Checking password- ${pass}`);
+    // console.log("Email Looks Good");
+    // console.log(`Checking password- ${pass}`);
     if (passwordCheck(pass, email)) {
       console.log("login looks good");
       let id = idCheck(email);
@@ -150,6 +191,7 @@ app.post("/login", (req, res) => {
   } else {
     // NEED TO RETURN A 403 STATUS CODE
     console.log("invalid Email");
+    return res.redirect("/login");
   }
 });
 
@@ -157,59 +199,38 @@ app.post('/logout', (req, res) => {
   res.clearCookie('user_id');
   res.redirect(`/urls`);
 });
-
-app.get("/urls/:shortURL", (req, res) => {
-
-  const templateVars = { 
-    username: req.cookies["user_id"],
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL],
-    users: users
-  };
-  res.render("urls_show", templateVars);
-});
-
-app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
-  res.redirect(longURL);
-});
-
 app.post("/urls", (req, res) => {
-  
+
   const short = generateRandomString()
-  urlDatabase[short] = req.body.longURL;
-  // console.log(req.body.longURL);
+  urlDatabase[short] = { longURL: req.body.longURL, userID: req.cookies["user_id"] }
   res.redirect(`http://localhost:${PORT}/urls/${short}`);
 });
 app.post("/register", (req, res) => {
 
-  if (!emailCheck(req.body.email)){
-    if (req.body.email.length === 0 || req.body.password.length < 6) {
+  if (!emailCheck(req.body.email)) {
+
+    if (req.body.email.length === 0 || req.body.password.length < 2) {
       res.statusCode = 400;
       console.log(res.statusCode, 'email is empty or password needs to be 6 characters');
+
     } else {
       let randId = generateRandomString()
       users[randId] =
-        {
+      {
         id: randId,
-        email: req.body.email, 
+        email: req.body.email,
         password: req.body.password
       }
-      res.redirect('/urls')
+      console.log("Account Created", req.body.email, req.body.password);
+      return res.redirect('/login')
     }
   } else {
-    console.log("Email Already In Use");
   }
 });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-
-
-
-
 
 // Not Sure If this Is doing anything!!!....
 // invalid old code I think!
@@ -222,8 +243,6 @@ app.listen(PORT, () => {
 //   // console.log(urlDatabase[short]);
 //   // res.redirect(`http://localhost:${PORT}/urls`)
 // });
-
-
 
 // I wrote this for my  app.post("/login", (req, res) but asked a senior mentor if this is propper and its a bit hard to read!
 

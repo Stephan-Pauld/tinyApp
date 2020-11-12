@@ -10,6 +10,7 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
+
     <% if(username) { %>
       <div>
         <p>Logged in as:  <%= users[username].email %></p>
@@ -20,6 +21,7 @@
       <% } else{ %>
       <a style="margin-right: 10px; color: black" href="/login">Login</a>
       <a style="color: black;" href="/register">Register</a>
+
       <% } %>
   </nav>
 </header>
