@@ -7,13 +7,6 @@
 </head>
 <body>
   <%- include('partials/_header') %>
-
-  
-      
-      
-      
-      
-
   <form action="/login" method="POST">
     <div style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
       <div>
@@ -28,6 +21,9 @@
       <div>
         <input class="form-control" type="password" name="password" placeholder="Password" style="width: 300px; margin: 1em">
       </div>
+      <% if (typeof fail !== 'undefined') {%>
+        <p><%= fail %></p>
+      <%}%>
       <div>
         <button type="submit" class="btn btn-primary">Login</button>
       </div>
