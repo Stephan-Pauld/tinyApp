@@ -8,7 +8,15 @@
 
 <body>
   <%- include('partials/_header') %>
-  <div class="card text-center">
+  
+  <% if (!Object.keys(myURLS).includes(shortURL) && longURL !== undefined) {%>
+    <h1>YOU DO NOT HAVE ACCESS TO THIS URL</h1>
+  <%}else if (!username) {%>
+    <h1>Login Required</h1>
+    <%} else if (longURL === undefined) {%>
+    <h1>Invalid URL</h1>
+  <%} else {%>
+    <div class="card text-center">
       <div class="card-header"></div>
       <div class="card-body">
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>
@@ -22,6 +30,10 @@
         </form>
     <div class="card-footer text-muted"></div>
   </div>
+  <%}%>
+
+
+
   
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

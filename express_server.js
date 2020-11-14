@@ -31,10 +31,6 @@ const users = {
   }
 };
 
-// ############################################
-// ##FUNCTIONS LETS TOSS IN A HELPER FILE!!!!##
-// ############################################
-
 const generateRandomString = () => {
   let newId = "";
   const len = 6;
@@ -54,22 +50,10 @@ const emailCheck = (email) => {
   return false;
 };
 
-// const idCheck = (email) => {
-//   for (const user in users) {
-//     if (email === users[user].email) {
-//       return user;
-//       // console.log(users[user].email,"Match");
-//     }
-//   }
-//   return false;
-// };
-
 const passwordCheck = (password, email) => {
   for (const user in users) {
-    // console.log(user);
     if (email === users[user].email) {
       if (bcrypt.compareSync(password, users[user].password)) {
-        // console.log(`we have found the password: ${users[user].password} for user: ${user}`);
         return true;
       }
     }
@@ -111,7 +95,6 @@ app.get('/urls', function(req, res) {
     username: req.session.user_id,
     users: users
   };
-  console.log(templateVars.username);
   res.render('urls_index', templateVars);
 });
 
@@ -121,39 +104,49 @@ app.get("/urls/new", (req, res) => {
     users: users
   };
   if (!req.session.user_id) {
-    console.log('I see NO COOKIESSS NOMNOMNOM');
     return res.redirect("/login");
   }
   res.render("urls_new", templateVars);
 });
 
 app.get('/login', function(req, res) {
+  if (req.session.user_id) {
+    res.redirect("/urls")
+  }
   const templateVars = {
     urls: urlDatabase,
     username: req.session.user_id,
     users: users
   };
-  console.log(req.session);
   res.render('login', templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  // console.log(req.params.shortURL);
+
   if (req.params.shortURL) {
+
     const templateVars = {
       username: req.session.user_id,
       shortURL: req.params.shortURL,
-      longURL: urlDatabase[req.params.shortURL].longURL,
-      users: users
+      longURL: urlDatabase[req.params.shortURL] && urlDatabase[req.params.shortURL].longURL,
+      users: users,
+      myURLS: findUserURLS(req.session.user_id)
     };
-    console.log("WE ARE CHECKING STUFFFF");
     return res.render("urls_show", templateVars);
   }
 });
 
 app.get("/u/:shortURL", (req, res) => {
+  
+  if (!Object.keys(urlDatabase).includes(req.params.shortURL)) {
+    return res.send({ERROR: "Invalid URL"})    
+  }
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
+});
+
+app.get("/", (req, res) => {
+  res.redirect(`http://localhost:${PORT}/urls`);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -168,14 +161,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 // ## POST REQUESTS  ##
 // ####################
 
-
 app.post("/urls/:shortURL/edit", (req, res) => {
 
   res.redirect(`http://localhost:${PORT}/urls/${req.params.shortURL}`);
 });
 
 app.post("/urls/:shortURL/changeURL", (req, res) => {
-  // console.log(req.params.shortURL);
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect(`http://localhost:${PORT}/urls`);
 });
@@ -187,7 +178,6 @@ app.post("/login", (req, res) => {
 
   if (emailCheck(email)) {
     console.log("Email Looks Good");
-    // console.log(`Checking password- ${pass}`);
     if (passwordCheck(pass, email)) {
       console.log("login looks good");
       req.session.user_id = getUserByEmail(users, req.body.email);
@@ -219,7 +209,6 @@ app.post("/register", (req, res) => {
 
     if (req.body.email.length === 0 || req.body.password.length < 6) {
       res.statusCode = 400;
-      // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
       const templateVars = {
         urls: urlDatabase,
         username: req.session.user_id,
@@ -229,7 +218,6 @@ app.post("/register", (req, res) => {
       return res.render("register", templateVars);
     } else {
       let randId = generateRandomString();
-
       users[randId] =
       {
         id: randId,
@@ -237,7 +225,8 @@ app.post("/register", (req, res) => {
         password: bcrypt.hashSync(req.body.password, 2)
       };
       console.log("Account Created", req.body.email, req.body.password);
-      return res.redirect('/login');
+      req.session.user_id = getUserByEmail(users, req.body.email);
+      return res.redirect(`http://localhost:${PORT}/urls`);
     }
   }
   const templateVars = {
